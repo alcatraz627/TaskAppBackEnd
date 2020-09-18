@@ -17,9 +17,19 @@ $router->get('/', function() {
 
 $router->group(['prefix' => 'api'], function () use($router) {
     $router->get('tasks/', 'TaskController@index');
+    $router->get('tasks/{id}', 'TaskController@retrieve');
 
-    $router->post('user/register', 'AuthController@register');
-    $router->post('user/login', 'AuthController@login');
+    $router->post('auth/register', 'AuthController@register');
+    $router->get('auth/verify/{token}', 'AuthController@verify');
+    $router->post('auth/login', 'AuthController@login');
+    $router->get('auth/me', 'AuthController@me');
+    
+    // $router->post('auth/forgotpass/request', 'AuthController@forgotpass_request');
+    // $router->post('auth/forgotpass/reset', 'AuthController@forgotpass_reset');
+    
+    $router->get('users', 'UserController@index');
+    $router->get('users/{id}', 'UserController@retrieve');
+
 });
 
 // $router->get('/', function () use ($router) {
