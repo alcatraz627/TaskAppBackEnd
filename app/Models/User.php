@@ -1,9 +1,10 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Auth\Authenticatable;
 use Laravel\Lumen\Auth\Authorizable;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
@@ -22,7 +23,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        'name', 'email',
+        'name', 'email', 'verified', 'role', 'createdBy', 'removedBy'
     ];
 
     /**
@@ -34,7 +35,10 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         'password',
     ];
 
-    public function getJWTIdentifier() {
+    // protected $appends = ['hasPermission'];
+
+    public function getJWTIdentifier()
+    {
         return $this->getKey();
     }
 
@@ -42,4 +46,9 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     {
         return [];
     }
+
+    // public function setHasPermissionAttribute($permission = "")
+    // {
+    //     return in_array($permission, Roles::find($this->role)->permissions);
+    // }
 }

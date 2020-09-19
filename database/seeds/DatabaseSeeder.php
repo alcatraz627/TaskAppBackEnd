@@ -2,6 +2,8 @@
 
 use Illuminate\Database\Seeder;
 
+// use RoleSeeder;
+
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -12,5 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         // $this->call('UsersTableSeeder');
+        $this->call(RoleSeeder::class);
+        // $this->call('RoleSeeder');
     }
 }

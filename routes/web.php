@@ -29,6 +29,10 @@ $router->group(['prefix' => 'api'], function () use($router) {
     
     $router->get('users', 'UserController@index');
     $router->get('users/{id}', 'UserController@retrieve');
+    
+    $router->post('users', 'UserController@create');
+    $router->patch('users/{id}', 'UserController@update');
+    $router->delete('users/{id}', 'UserController@delete');
 
 });
 

@@ -13,7 +13,9 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        //
+        // Package to be able to use `php artisan vendor:publish` in lumen
+        // https://github.com/laravelista/lumen-vendor-publish^5.8
+        \Laravelista\LumenVendorPublish\VendorPublishCommand::class
     ];
 
     /**
