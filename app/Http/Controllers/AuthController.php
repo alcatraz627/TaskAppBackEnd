@@ -56,7 +56,7 @@ class AuthController extends Controller
         try {
             [$user, $verifToken] = $this->createUser($request->only('name', 'email', 'password', 'password_confirmation'));
 
-            return response()->json(['user' => $user->only('name', 'email', 'id'), 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
+            return response()->json(['user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => "User registration failed"], 500);

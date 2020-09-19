@@ -46,7 +46,7 @@ class UserController extends Controller
         try {
             [$user, $verifToken] = $this->AuthController->createUser($request->only('name', 'email', 'password'));
 
-            return response()->json(['user' => $user->only('name', 'email', 'id'), 'message' => 'Normal user created successfully. Verification token ' . ($verifToken->token) . ' sent to user\'s email'], 201);
+            return response()->json(['user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'Normal user created successfully. Verification token ' . ($verifToken->token) . ' sent to user\'s email'], 201);
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => "User registration failed"], 500);
@@ -73,7 +73,7 @@ class UserController extends Controller
 
             $user->save();
 
-            return response()->json($user);
+            return response()->json($user->only('name', 'email', 'id', 'role'));
         }
 
         // TODO: Admin can change role. Do after ENUM for perms.

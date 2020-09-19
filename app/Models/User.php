@@ -47,6 +47,11 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return [];
     }
 
+    public function getRoleAttribute($id)
+    {
+        return Roles::find($id)->name;
+    }
+
     // public function setHasPermissionAttribute($permission = "")
     // {
     //     return in_array($permission, Roles::find($this->role)->permissions);
