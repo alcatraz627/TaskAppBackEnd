@@ -47,7 +47,6 @@ class UserController extends Controller
             [$user, $verifToken] = $this->AuthController->createUser($request->only('name', 'email', 'password'));
 
             return response()->json(['user' => $user->only('name', 'email', 'id'), 'message' => 'Normal user created successfully. Verification token ' . ($verifToken->token) . ' sent to user\'s email'], 201);
-
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => "User registration failed"], 500);
@@ -56,19 +55,42 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->validate($request, [
+            'name' => 'string',
+            'email' => 'email|unique:users',
+            'password' => 'string',
+            // 'roles' =>
+        ]);
+
+        if ($id == Auth::user()->id) {
+            $fields = ['name', 'email', 'password'];
+            $user = Auth::user();
+
+            foreach ($fields as $field) {
+                if (!is_null($request->input($field))) $user[$field] = $request->input($field);
+                if (!is_null($request->input('password'))) $user->password = app('hash')->make($request->input('password'));
+            }
+
+            $user->save();
+
+            return response()->json($user);
+        }
+
+        // TODO: Admin can change role. Do after ENUM for perms.
+        return response();
     }
 
     public function delete($id)
     {
-        if($this->hasPermission(Auth::user(), 'user-delete')) {
+        if ($this->hasPermission(Auth::user(), 'user-delete')) {
             $user = User::find($id);
-            if(!$user) {
-                return response()->json(['message' => 'User with ID '.$id.' does not exist'], 404);
+            if (!$user) {
+                return response()->json(['message' => 'User with ID ' . $id . ' does not exist'], 404);
             }
             $user->delete();
-            return response()->json(['message' => 'User with ID '.$id.' deleted'], 204);
+            return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 204);
         } else {
-            return response()->json(['message'=>'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
     }
 }
