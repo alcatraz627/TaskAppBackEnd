@@ -8,13 +8,14 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\VerifyUser;
 use App\Models\Roles;
+use App\Models\ForgotPass;
 
 class AuthController extends Controller
 {
 
     public function __construct()
     {
-        $this->middleware('auth', ['except' => ['login', 'register', 'verify']]);
+        // $this->middleware('auth', ['except' => ['login', 'register', 'verify']]);
     }
 
     private function generateToken($length)
@@ -27,11 +28,9 @@ class AuthController extends Controller
         $user = new User;
         $user->name = $data['name'];
         $user->email = $data['email'];
-        $plainPassword = $data['password'];
-        $user->password = app('hash')->make($plainPassword);
+        $user->password = app('hash')->make($data['password']);
 
         $admin = Roles::where('name', 'user')->first();
-        // error_log($admin);
         $user->role = $admin->id;
 
         $user->save();
@@ -63,7 +62,7 @@ class AuthController extends Controller
         }
     }
 
-    public function verify(String $token)
+    public function email_verify(String $token)
     {
         $verifEntry = VerifyUser::where('token', $token)->first();
         if ($verifEntry) {
@@ -102,5 +101,68 @@ class AuthController extends Controller
     {
         error_log(json_encode(Roles::first()->permissions));
         return (Auth::user());
+    }
+
+    public function forgotpass_request(Request $request)
+    {
+        $this->validate($request, [
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->input('email'))->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User with email ' . $request->input('email') . ' does not exist.'], 404);
+        }
+
+        if (!$user->verified) {
+            return response()->json(['message' => 'Kindly complete email verification of ' . $request->input('email') . ' before resetting password'], 401);
+        }
+
+        $forgotPass = ForgotPass::firstOrNew(['user_id' => $user->id]);
+        $forgotPass->token = $this->generateToken(10);
+        $forgotPass->save();
+
+        return response()->json(['token' => $forgotPass->token, 'message' => 'A password reset link has been sent to ' . $request->input('email') . '. Please continue from that link'], 201);
+    }
+
+    public function forgotpass_verify(Request $request)
+    {
+        $this->validate($request, [
+            'token' => 'string',
+        ]);
+
+        $forgotPass = ForgotPass::where('token', $request->input('token'))->first();
+
+        if (!$forgotPass) {
+            return response()->json(['message' => 'Invalid password reset token'], 400);
+        }
+
+        return response()->json(['email' => $forgotPass->user()->email], 200);
+    }
+
+    public function forgotpass_reset(Request $request)
+    {
+        $this->validate($request, [
+            'token' => 'string',
+            'password' => 'required|confirmed',
+        ]);
+        try {
+            $forgotPass = ForgotPass::where('token', $request->input('token'))->first();
+            if (!$forgotPass) {
+                return response()->json(['message' => 'Invalid password reset token'], 400);
+            }
+            $user = $forgotPass->user();
+            $user->password = app('hash')->make($request->input('password'));
+            $user->save();
+
+            $forgotPass->delete();
+
+            return response()->json(['message' => 'Password updated successfully. You can now login.'], 200);
+
+        } catch (\Throwable $th) {
+            error_log($th);
+            return response()->json(['message' => 'An error occured. Please try again later'], 500);
+        }
     }
 }
