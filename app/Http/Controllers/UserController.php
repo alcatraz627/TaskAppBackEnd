@@ -76,21 +76,17 @@ class UserController extends Controller
             return response()->json($user->only('name', 'email', 'id', 'role'));
         }
 
-        // TODO: Admin can change role. Do after ENUM for perms.
+        // TODO: Admin can change role. Do after ENUM for perms. Update: Do it in a different method
         return response();
     }
 
     public function delete($id)
     {
-        if ($this->hasPermission(Auth::user(), 'user-delete')) {
-            $user = User::find($id);
-            if (!$user) {
-                return response()->json(['message' => 'User with ID ' . $id . ' does not exist'], 404);
-            }
-            $user->delete();
-            return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 204);
-        } else {
-            return response()->json(['message' => 'Unauthorized'], 401);
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User with ID ' . $id . ' does not exist'], 404);
         }
+        $user->delete();
+        return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 200);
     }
 }

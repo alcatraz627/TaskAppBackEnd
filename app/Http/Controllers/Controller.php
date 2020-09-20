@@ -19,8 +19,7 @@ class Controller extends BaseController
         ], 200);
     }
 
-    protected function hasPermission(User $user, String $permission) {
-        return in_array($permission, Roles::find($user->role)->permissions);
-
-    }
+    // protected function hasPermission(User $user, String $permission) {
+    //     return in_array($permission, Roles::find($user->role)->permissions);
+    // }
 }

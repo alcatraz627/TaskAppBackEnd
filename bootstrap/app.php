@@ -95,6 +95,8 @@ $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
+    'permission' => App\Http\Middleware\PermissionMiddleware::class,
+    'guest' => App\Http\Middleware\GuestMiddleware::class,
 ]);
 
 $app->router->group([

@@ -19,20 +19,20 @@ $router->group(['prefix' => 'api'], function () use($router) {
     $router->get('tasks/', 'TaskController@index');
     $router->get('tasks/{id}', 'TaskController@retrieve');
 
-    $router->post('auth/register', 'AuthController@register');
-    $router->get('auth/verify/{token}', 'AuthController@verify');
-    $router->post('auth/login', 'AuthController@login');
+    $router->post('auth/register', ['middleware' => 'guest', 'uses' => 'AuthController@register']);
+    $router->get('auth/verify/{token}', ['middleware' => 'guest', 'uses' => 'AuthController@verify']);
+    $router->post('auth/login', ['middleware' => 'guest', 'uses' => 'AuthController@login']);
     $router->get('auth/me', 'AuthController@me');
     
     // $router->post('auth/forgotpass/request', 'AuthController@forgotpass_request');
     // $router->post('auth/forgotpass/reset', 'AuthController@forgotpass_reset');
     
-    $router->get('users', 'UserController@index');
+    $router->get('users', ['middleware' => ['auth', 'permission:user-list'] ,'uses' => 'UserController@index']);
     $router->get('users/{id}', 'UserController@retrieve');
     
-    $router->post('users', 'UserController@create');
+    $router->post('users', ['middleware' => ['auth', 'permission:user-create'] ,'uses' => 'UserController@create']);
     $router->patch('users/{id}', 'UserController@update');
-    $router->delete('users/{id}', 'UserController@delete');
+    $router->delete('users/{id}', ['middleware' => ['auth', 'permission:user-delete'] ,'uses' => 'UserController@delete']);
 
 });
 
