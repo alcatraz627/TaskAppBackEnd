@@ -25,7 +25,7 @@ class AuthController extends Controller
 
     public function createUser($data, $createdById = null)
     {
-        $admin = Roles::where('name', 'user')->first();
+        $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
 
         $user = new User;
         $user->name = $data['name'];

@@ -24,6 +24,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('auth/login', ['middleware' => 'guest', 'uses' => 'AuthController@login']);
     $router->post('auth/refresh', ['middleware' => 'auth', 'uses' => 'AuthController@refresh_token']);
     $router->post('auth/logout', ['middleware' => 'auth', 'uses' => 'AuthController@logout']);
+
     $router->get('auth/me', ['middleware' => 'auth', 'uses' => 'AuthController@me']);
 
     $router->post('auth/forgotpass/request', ['middleware' => 'guest' ,'uses' => 'AuthController@forgotpass_request']);

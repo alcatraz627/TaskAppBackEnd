@@ -16,14 +16,14 @@ class RoleSeeder extends Seeder
         // DB::table('roles')->insert(
         $roles = [
             [
-                'name' => 'admin',
+                'name' => config('enums.roles')['ADMIN'],
                 'description' => 'Admin role',
                 'permissions' => ([
-                    'user-list', 'user-add', 'user-delete', 'task-list'
+                    'user-list', 'user-add', 'user-delete', 'task-list', 'role-change'
                 ])
             ],
             [
-                'name' => 'user',
+                'name' => config('enums.roles')['USER'],
                 'description' => 'Normal user role',
                 'permissions' => ([])
             ]

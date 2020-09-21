@@ -25,6 +25,10 @@ $app->withFacades();
 
 $app->withEloquent();
 
+collect(scandir(__DIR__ . '/../config'))->each(function ($item) use ($app) {
+    $app->configure(basename($item, '.php'));
+});
+
 /*
 |--------------------------------------------------------------------------
 | Register Container Bindings

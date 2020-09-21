@@ -54,7 +54,6 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     }
 
     public function getRole() {
-        error_log(Roles::where('name', $this->role)->first());
         return Roles::where('name', $this->role)->first();
     }
 
