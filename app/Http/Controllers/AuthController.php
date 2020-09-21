@@ -35,7 +35,7 @@ class AuthController extends Controller
         $user->role = $admin->id;
         $user->save();
 
-        $user->update(['created_by' => $createdById ? $createdById : $user->id ]);
+        $user->update(['created_by' => $createdById ? $createdById : $user->id]);
 
         $verifToken = VerifyUser::create([
             'user_id' => $user->id,
@@ -82,7 +82,7 @@ class AuthController extends Controller
     {
         $this->validate($request, [
             'email' => 'required|email',
-            'password' => 'required|min:6',
+            'password' => 'required',
         ]);
 
         $credentials = $request->only(['email', 'password']);
@@ -96,6 +96,23 @@ class AuthController extends Controller
         }
 
         return $this->respondWithToken($token);
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+        return response()->json(['message' => 'User logged out successfully'], 201);
+    }
+
+    public function rrefresh_token()
+    {
+        try {
+            $refresh = Auth::refresh();
+            return response()->json(['message' => 'Token refreshed successfully', 'token' => $refresh], 200);
+        } catch (\Throwable $th) {
+            error_log($th);
+            return response()->json(['message' => 'An error occured. Please try again later.'], 500);
+        }
     }
 
     public function me()
@@ -147,7 +164,7 @@ class AuthController extends Controller
             'token' => 'string',
             'password' => 'required|confirmed|min:6',
         ]);
-        
+
         try {
             $forgotPass = ForgotPass::where('token', $request->input('token'))->first();
             if (!$forgotPass) {
@@ -160,7 +177,6 @@ class AuthController extends Controller
             $forgotPass->delete();
 
             return response()->json(['message' => 'Password updated successfully. You can now login.'], 200);
-
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => 'An error occured. Please try again later'], 500);

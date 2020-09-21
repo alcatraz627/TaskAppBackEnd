@@ -59,7 +59,6 @@ class UserController extends Controller
             'name' => 'string',
             'email' => 'email|unique:users',
             'password' => 'string',
-            // 'roles' =>
         ]);
 
         if ($id == Auth::user()->id) {
@@ -79,7 +78,7 @@ class UserController extends Controller
         // TODO: Admin can change role. Do after ENUM for perms. Update: Do it in a different method
         return response();
     }
-
+    
     public function delete($id)
     {
         $user = User::find($id);
