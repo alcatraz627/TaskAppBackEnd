@@ -44,7 +44,7 @@ class UserController extends Controller
         ]);
 
         try {
-            [$user, $verifToken] = $this->AuthController->createUser($request->only('name', 'email', 'password'));
+            [$user, $verifToken] = $this->AuthController->createUser($request->only('name', 'email', 'password'), Auth::user()->id);
 
             return response()->json(['user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'Normal user created successfully. Verification token ' . ($verifToken->token) . ' sent to user\'s email'], 201);
         } catch (\Throwable $th) {
@@ -86,6 +86,7 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['message' => 'User with ID ' . $id . ' does not exist'], 404);
         }
+        $user->update(['deleted_by' => Auth::user()->id]);
         $user->delete();
         return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 200);
     }

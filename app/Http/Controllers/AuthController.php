@@ -23,23 +23,24 @@ class AuthController extends Controller
         return bin2hex(random_bytes($length));
     }
 
-    public function createUser($data)
+    public function createUser($data, $createdById = null)
     {
+        $admin = Roles::where('name', 'user')->first();
+
         $user = new User;
         $user->name = $data['name'];
         $user->email = $data['email'];
         $user->password = app('hash')->make($data['password']);
 
-        $admin = Roles::where('name', 'user')->first();
         $user->role = $admin->id;
-
         $user->save();
 
-        $verifToken = new VerifyUser;
-        $verifToken->user_id = $user->id;
-        $verifToken->token = $this->generateToken(20);
+        $user->update(['created_by' => $createdById ? $createdById : $user->id ]);
 
-        $verifToken->save();
+        $verifToken = VerifyUser::create([
+            'user_id' => $user->id,
+            'token' =>  $this->generateToken(20),
+        ]);
 
         return ([$user, $verifToken]);
     }
@@ -49,11 +50,11 @@ class AuthController extends Controller
         $this->validate($request, [
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed'
+            'password' => 'required|confirmed|min:6'
         ]);
 
         try {
-            [$user, $verifToken] = $this->createUser($request->only('name', 'email', 'password', 'password_confirmation'));
+            [$user, $verifToken] = $this->createUser($request->only('name', 'email', 'password', 'password_confirmation'), null);
 
             return response()->json(['user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
         } catch (\Throwable $th) {
@@ -81,7 +82,7 @@ class AuthController extends Controller
     {
         $this->validate($request, [
             'email' => 'required|email',
-            'password' => 'required|string',
+            'password' => 'required|min:6',
         ]);
 
         $credentials = $request->only(['email', 'password']);
@@ -99,7 +100,6 @@ class AuthController extends Controller
 
     public function me()
     {
-        error_log(json_encode(Roles::first()->permissions));
         return (Auth::user());
     }
 
@@ -145,8 +145,9 @@ class AuthController extends Controller
     {
         $this->validate($request, [
             'token' => 'string',
-            'password' => 'required|confirmed',
+            'password' => 'required|confirmed|min:6',
         ]);
+        
         try {
             $forgotPass = ForgotPass::where('token', $request->input('token'))->first();
             if (!$forgotPass) {
