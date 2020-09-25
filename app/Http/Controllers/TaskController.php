@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 // use App\Models\User;
+use App\Models\Roles;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -19,19 +20,30 @@ class TaskController extends Controller
 
     public function index()
     {
-        // error_log(auth()->user('id'));
-        $tasks = Task::all();
+        // When reading user->role, it returns the name of the role in the roles db instead of the ID
+        if (Auth::user()->role == config('enums.roles')['ADMIN']) {
+            $tasks = Task::all();
+        } else {
+            $tasks = Task::where('created_by', '=', Auth::user()->id)
+                ->orWhere('assigned_to', '=', Auth::user()->id)->get();
+        }
         return response()->json($tasks);
     }
 
     public function retrieve($id)
     {
-        // error_log(auth()->user('id'));
         $task = Task::find($id);
         if ($task == null) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        return response()->json($task);
+
+        $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
+        if (Auth::user()->role == $admin->role || in_array(Auth::user()->id, [$task->created_by, $task->assigned_to])) {
+
+            return response()->json($task);
+        } else {
+            return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can view', 401]);
+        }
     }
 
     public function create(Request $request)
@@ -59,8 +71,9 @@ class TaskController extends Controller
 
     public function update(Request $request, $id)
     {
-        error_log(json_encode($request->all()));
+        $TASK_STATUS = config('enums.task_status');
         $task = Task::find($id);
+
         if (!$task) {
             return response()->json(['message' => 'Task not found'], 404);
         }
@@ -71,18 +84,39 @@ class TaskController extends Controller
             'assigned_to' => 'nullable|sometimes|exists:users,id',
             'due_date' => 'date_format:Y-m-d H:i:s|nullable', //'Y-m-d H:i:s'
 
-            'status' => 'in:' . join(",", array_keys(config('enums.task_status'))),
+            'status' => 'in:' . join(",", array_keys($TASK_STATUS)),
         ]);
+
+        if (!in_array(Auth::user()->id, [$task->assigned_to, $task->created_by])) {
+            return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can update tasks', 401]);
+        }
 
         if ($task->created_by == Auth::user()->id) {
             $data = $request->only(['title', 'description', 'assigned_to', 'due_date']);
-        } else if ($task->assigned_to == Auth::user()->id) {
-            $data = $request->only(['status']);
-        } else {
-            return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can update tasks', 403]);
+        }
+
+        if ($task->assigned_to == Auth::user()->id && $request->has('status')) {
+            error_log($TASK_STATUS[$request->input('status')]);
+            $data['status'] = $TASK_STATUS[$request->input('status')];
         }
 
         $task->update($data);
-        return response()->json($task, 201);
+        return response()->json(['task' => $task, 'message' => 'Task updated successfully'], 201);
+    }
+
+    public function delete($id)
+    {
+        $task = Task::find($id);
+
+        if (!$task) {
+            return response()->json(['message' => 'Task not found'], 404);
+        }
+
+        if (Auth::user()->id == $task->id) {
+            $task->delete();
+            return response()->json(['message' => 'Task deleted'], 204);
+        } else {
+            return response()->json(['message' => 'You are not authorized to delete this task'], 401);;
+        }
     }
 }
