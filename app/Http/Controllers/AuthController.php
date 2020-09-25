@@ -56,7 +56,7 @@ class AuthController extends Controller
         try {
             [$user, $verifToken] = $this->createUser($request->only('name', 'email', 'password', 'password_confirmation'), null);
 
-            return response()->json(['user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
+            return response()->json(['token' => $verifToken->token,  'user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => "User registration failed"], 500);
@@ -95,7 +95,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Please verify your email address'], 401);
         }
 
-        return $this->respondWithToken($token);
+        return response()->json([
+            'token' => $token,
+            'token_type' => 'Token',
+            'expires_in' => Auth::factory()->getTTL() * 60,
+            'user' => Auth::user()->only(['id', 'email', 'name', 'role'])
+        ], 200);
+        // return $this->respondWithToken($token);
     }
 
     public function logout()
@@ -104,7 +110,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'User logged out successfully'], 201);
     }
 
-    public function rrefresh_token()
+    public function refresh_token()
     {
         try {
             $refresh = Auth::refresh();
@@ -117,7 +123,7 @@ class AuthController extends Controller
 
     public function me()
     {
-        return (Auth::user());
+        return Auth::user()->only('name', 'email', 'id', 'role');
     }
 
     public function forgotpass_request(Request $request)

@@ -28,11 +28,12 @@ class UserController extends Controller
     public function retrieve($id)
     {
         // error_log(auth()->user('id'));
-        $user = User::find($id);
+        $user_id = ($id == "me") ? Auth::user()->id : $id;
+        $user = User::find($user_id);
         if ($user == null) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        return response()->json($user);
+        return response()->json($user)->only('name', 'email', 'id', 'role');
     }
 
     public function create(Request $request)
