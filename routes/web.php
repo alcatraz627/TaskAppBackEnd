@@ -16,8 +16,11 @@ $router->get('/', function () {
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
-    $router->get('tasks/', 'TaskController@index');
+    $router->get('tasks', 'TaskController@index');
     $router->get('tasks/{id}', 'TaskController@retrieve');
+    $router->post('tasks', 'TaskController@create');
+    $router->patch('tasks/{id}', ['middleware' => ['emptyToNull'], 'uses' => 'TaskController@update']);
+    $router->delete('tasks/{id}', 'TaskController@delete');
 
     $router->post('auth/register', ['middleware' => 'guest', 'uses' => 'AuthController@register']);
     $router->post('auth/verify/{token}', ['middleware' => 'guest', 'uses' => 'AuthController@email_verify']);
