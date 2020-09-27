@@ -37,6 +37,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('users', ['middleware' => ['auth', 'permission:user-list'], 'uses' => 'UserController@index']);
     $router->get('users/{id}', 'UserController@retrieve');
 
+    $router->get('users/{id}/tasks/', 'UserController@tasklist');
+
     $router->post('users', ['middleware' => ['auth', 'permission:user-create'], 'uses' => 'UserController@create']);
     $router->patch('users/{id}', 'UserController@update');
     $router->delete('users/{id}', ['middleware' => ['auth', 'permission:user-delete'], 'uses' => 'UserController@delete']);

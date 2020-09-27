@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Task;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class UserController extends Controller
         if ($user == null) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        return response()->json($user)->only('name', 'email', 'id', 'role');
+        return response()->json($user->only('name', 'email', 'id', 'role'));
     }
 
     public function create(Request $request)
@@ -79,7 +80,7 @@ class UserController extends Controller
         // TODO: Admin can change role. Do after ENUM for perms. Update: Do it in a different method
         return response();
     }
-    
+
     public function delete($id)
     {
         $user = User::find($id);
@@ -89,5 +90,29 @@ class UserController extends Controller
         $user->update(['deleted_by' => Auth::user()->id]);
         $user->delete();
         return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 200);
+    }
+
+    public function tasklist($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+        $tasks = Task::where('assigned_to', $id)->orWhere('created_by', $id)->get()->toArray();
+
+        $getId = function ($task) {
+            return $task['id'];
+        };
+
+        $filterByParam = function ($param) use ($id) {
+            return function ($task) use ($id, $param) {
+                return $task[$param] == $id;
+            };
+        };
+
+        $assigned_to = array_values(array_map($getId, array_filter($tasks, $filterByParam('assigned_to'))));
+        $created_by = array_values(array_map($getId, array_filter($tasks, $filterByParam('created_by'))));
+
+        return response()->json(['tasks' => $tasks, 'created_by' => $created_by, 'assigned_to' => $assigned_to]);
     }
 }

@@ -25,14 +25,15 @@ class AuthController extends Controller
 
     public function createUser($data, $createdById = null)
     {
-        $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
+        // $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
+        $userRole = Roles::where('name', config('enums.roles')['USER'])->first();
 
         $user = new User;
         $user->name = $data['name'];
         $user->email = $data['email'];
         $user->password = app('hash')->make($data['password']);
 
-        $user->role = $admin->id;
+        $user->role = $userRole->id;
         $user->save();
 
         $user->update(['created_by' => $createdById ? $createdById : $user->id]);

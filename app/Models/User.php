@@ -24,7 +24,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'verified', 'role', 'created_by', 'deleted_by'
+        'name', 'email', 'role',
     ];
 
     /**
@@ -33,7 +33,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $hidden = [
-        'password',
+        'password',  'created_by', 'deleted_by', 'verified', 'created_at', 'updated_at', 'deleted_at',
     ];
 
     // protected $appends = ['hasPermission'];
@@ -53,11 +53,13 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return Roles::find($id)->name;
     }
 
-    public function getRole() {
+    public function getRole()
+    {
         return Roles::where('name', $this->role)->first();
     }
 
-    public function hasPermission($permission) {
+    public function hasPermission($permission)
+    {
         return in_array($permission, $this->getRole()->permissions);
     }
 }
