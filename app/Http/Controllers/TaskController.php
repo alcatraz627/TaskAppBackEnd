@@ -57,7 +57,9 @@ class TaskController extends Controller
             'status' => 'in:' . join(",", array_keys($TASK_STATUS)),
             // 'created_by' => 'required|exists:users,id', 
             'assigned_to' => 'exists:users,id',
-            'due_date' => 'date_format:Y-m-d H:i:s' //'Y-m-d H:i:s'
+            'due_date' => 'date_format:Y-m-d\TH:i'
+            // PHP date validator string
+            // https://www.php.net/manual/en/datetime.createfromformat.php
         ]);
 
         $data = $request->only(['title', 'description', 'status', 'assigned_to', 'due_date']);
@@ -83,7 +85,7 @@ class TaskController extends Controller
             'title' => 'min:1',
             'description' => 'nullable',
             'assigned_to' => 'nullable|sometimes|exists:users,id',
-            'due_date' => 'date_format:Y-m-d H:i:s|nullable', //'Y-m-d H:i:s'
+            'due_date' => 'date_format:Y-m-d\TH:i|nullable', //'Y-m-d H:i:s'
 
             'status' => 'in:' . join(",", array_keys($TASK_STATUS)),
         ]);
