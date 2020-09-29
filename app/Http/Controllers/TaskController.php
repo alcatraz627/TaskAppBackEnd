@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+
 use App\Models\Task;
 // use App\Models\User;
 use App\Models\Roles;
@@ -9,6 +10,7 @@ use App\Models\Roles;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -81,14 +83,20 @@ class TaskController extends Controller
             return response()->json(['message' => 'Task not found'], 404);
         }
 
-        $this->validate($request, [
-            'title' => 'min:1',
-            'description' => 'nullable',
-            'assigned_to' => 'nullable|sometimes|exists:users,id',
-            'due_date' => 'date_format:Y-m-d\TH:i|nullable', //'Y-m-d H:i:s'
+        try {
+            $this->validate($request, [
+                'title' => 'min:1',
+                'description' => 'nullable',
+                'assigned_to' => 'nullable|sometimes|exists:users,id',
+                // 'due_date' => 'date_format:"Y-m-d\TH:i"|nullable',
+                // 'due_date' => 'date_format:Y-m-d\TH:i|nullable',
 
-            'status' => 'in:' . join(",", array_keys($TASK_STATUS)),
-        ]);
+                'status' => 'in:' . join(",", array_keys($TASK_STATUS)),
+            ]);
+        } catch (\Throwable $th) {
+            throw($th);
+            return response()->json(['message' => 'Validation error'], 400);
+        }
 
         if (!in_array(Auth::user()->id, [$task->assigned_to, $task->created_by])) {
             return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can update tasks', 401]);
@@ -96,10 +104,13 @@ class TaskController extends Controller
 
         if ($task->created_by == Auth::user()->id) {
             $data = $request->only(['title', 'description', 'assigned_to', 'due_date']);
+            // $data['due_date'] = Carbon::parse($data['due_date'])->parse("Y-m-d\TH:i")->format("Y-m-D H:i:s");
+            // $data['due_date'] = $data['due_date'] . ":00";
+            $data['due_date'] = date("Y-m-d H:i:s", strtotime($data['due_date']));
+            error_log($data['due_date']);
         }
 
         if ($task->assigned_to == Auth::user()->id && $request->has('status')) {
-            error_log($TASK_STATUS[$request->input('status')]);
             $data['status'] = $TASK_STATUS[$request->input('status')];
         }
 
