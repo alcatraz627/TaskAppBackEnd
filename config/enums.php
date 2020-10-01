@@ -6,8 +6,8 @@ return [
         'USER' => 'user',
     ],
     'task_status' => [
-        'PENDING' => 'pending',
-        'IN_PROGRESS' => 'in_progress',
-        'COMPLETE' => 'complete'
+        'PENDING' => 'PENDING',
+        'IN_PROGRESS' => 'IN_PROGRESS',
+        'COMPLETE' => 'COMPLETE'
     ]
 ];

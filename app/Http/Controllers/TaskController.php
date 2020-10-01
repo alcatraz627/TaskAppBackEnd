@@ -66,12 +66,16 @@ class TaskController extends Controller
 
         $data = $request->only(['title', 'description', 'status', 'assigned_to', 'due_date']);
 
+        if (array_key_exists('due_date', $data)) {
+            $data['due_date'] = date("Y-m-d H:i:s", strtotime($data['due_date']));
+        }
+
         $data['created_by'] = Auth::user()->id;
         $data['status'] = $TASK_STATUS[array_key_exists('status', $data)  ? $data['status'] : array_keys($TASK_STATUS)[0]];
 
         $task = Task::create($data);
 
-        return response()->json($task, 201);
+        return response()->json(['message' => 'Task created successfully!', 'task' => $task], 201);
     }
 
     public function update(Request $request, $id)
@@ -94,20 +98,20 @@ class TaskController extends Controller
                 'status' => 'in:' . join(",", array_keys($TASK_STATUS)),
             ]);
         } catch (\Throwable $th) {
-            throw($th);
+            throw ($th);
             return response()->json(['message' => 'Validation error'], 400);
         }
 
         if (!in_array(Auth::user()->id, [$task->assigned_to, $task->created_by])) {
             return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can update tasks', 401]);
         }
+        $data = [];
 
         if ($task->created_by == Auth::user()->id) {
             $data = $request->only(['title', 'description', 'assigned_to', 'due_date']);
-            // $data['due_date'] = Carbon::parse($data['due_date'])->parse("Y-m-d\TH:i")->format("Y-m-D H:i:s");
-            // $data['due_date'] = $data['due_date'] . ":00";
-            $data['due_date'] = date("Y-m-d H:i:s", strtotime($data['due_date']));
-            error_log($data['due_date']);
+            if (array_key_exists('due_date', $data)) {
+                $data['due_date'] = date("Y-m-d H:i:s", strtotime($data['due_date']));
+            }
         }
 
         if ($task->assigned_to == Auth::user()->id && $request->has('status')) {
@@ -126,9 +130,9 @@ class TaskController extends Controller
             return response()->json(['message' => 'Task not found'], 404);
         }
 
-        if (Auth::user()->id == $task->id) {
+        if (Auth::user()->id == $task->created_by) {
             $task->delete();
-            return response()->json(['message' => 'Task deleted'], 204);
+            return response()->json(['message' => 'Task deleted successfully!'], 200);
         } else {
             return response()->json(['message' => 'You are not authorized to delete this task'], 401);;
         }

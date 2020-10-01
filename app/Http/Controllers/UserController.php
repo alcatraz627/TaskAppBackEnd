@@ -87,7 +87,9 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['message' => 'User with ID ' . $id . ' does not exist'], 404);
         }
-        $user->update(['deleted_by' => Auth::user()->id]);
+        $user->deleted_by = Auth::user()->id;
+        $user->save();
+        // $user->update(['deleted_by' => Auth::user()->id]);
         $user->delete();
         return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 200);
     }
