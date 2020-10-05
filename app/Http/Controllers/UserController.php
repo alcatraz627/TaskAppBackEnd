@@ -87,6 +87,8 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['message' => 'User with ID ' . $id . ' does not exist'], 404);
         }
+        Task::where('assigned_to', $id)->update(['assigned_to' => null]);
+
         $user->deleted_by = Auth::user()->id;
         $user->save();
         // $user->update(['deleted_by' => Auth::user()->id]);

@@ -16,6 +16,8 @@ $router->get('/', function () {
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
+    $router->get('pushNotif', 'TaskController@pushNotif');
+
     $router->get('tasks', 'TaskController@index');
     $router->get('tasks/{id}', 'TaskController@retrieve');
     $router->post('tasks', 'TaskController@create');

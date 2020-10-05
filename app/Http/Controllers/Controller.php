@@ -8,15 +8,45 @@ use App\Models\Roles;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
+use Pusher\Pusher;
+
+// $pusher = new Pusher("APP_KEY", "APP_SECRET", "APP_ID", array('cluster' => 'APP_CLUSTER'));
+
 class Controller extends BaseController
 {
     //
-    protected function respondWithToken($token) {
-        return response()->json([
-            'token'=>$token,
-            'token_type'=>'Token',
-            'expires_in'=> Auth::factory()->getTTL() * 60
-        ], 200);
+    private $pusher;
+
+    private function getPusher () {
+        if(!$this->pusher) {
+            $this->pusher = new Pusher(
+                env('PUSHER_APP_KEY'),
+                env('PUSHER_APP_SECRET'),
+                env('PUSHER_APP_ID'),
+                array(
+                    'cluster' => config('broadcasting.options.cluster'),
+                    'useTLS' => config('broadcasting.options.cluster')
+                )
+            );            
+        }
+        return $this->pusher;
+    }
+
+    // protected function respondWithToken($token)
+    // {
+    //     return response()->json([
+    //         'token' => $token,
+    //         'token_type' => 'Token',
+    //         'expires_in' => Auth::factory()->getTTL() * 60
+    //     ], 200);
+    // }
+
+    protected function pushEvent($data)
+    {
+        $channels = ['channelForUser1'];
+        $event = 'listenerEvent';
+
+        $this->getPusher()->trigger($channels, $event, $data);
     }
 
     // protected function hasPermission(User $user, String $permission) {

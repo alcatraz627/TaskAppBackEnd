@@ -11,7 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
@@ -136,5 +136,11 @@ class TaskController extends Controller
         } else {
             return response()->json(['message' => 'You are not authorized to delete this task'], 401);;
         }
+    }
+
+    public function pushNotif()
+    {
+        $r = $this->pushEvent(["message" => "From the backend", 'id' => 'testnotif', 'type' => 'INFO']);
+        return response($r);
     }
 }
