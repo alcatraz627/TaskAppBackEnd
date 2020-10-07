@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 use App\Models\User;
 use App\Models\VerifyUser;
@@ -96,11 +98,17 @@ class AuthController extends Controller
             return response()->json(['message' => 'Please verify your email address'], 401);
         }
 
+        Mail::raw("Test Mail from self", function($message) {
+            $message->to('aakarsh.chopra@vmock.com')
+                ->subject("Is this working?");
+        });
+
         return response()->json([
             'token' => $token,
             'token_type' => 'Token',
             'expires_in' => Auth::factory()->getTTL() * 60,
-            'user' => Auth::user()->only(['id', 'email', 'name', 'role'])
+            'user' => Auth::user()->only(['id', 'email', 'name', 'role']),
+            // 'mail' => config('mail')
         ], 200);
         // return $this->respondWithToken($token);
     }
@@ -136,11 +144,11 @@ class AuthController extends Controller
         $user = User::where('email', $request->input('email'))->first();
 
         if (!$user) {
-            return response()->json(['message' => 'User with email ' . $request->input('email') . ' does not exist.'], 404);
+            return response()->json(['type' => 'ERROR', 'message' => 'User with email ' . $request->input('email') . ' does not exist.'], 404);
         }
 
         if (!$user->verified) {
-            return response()->json(['message' => 'Kindly complete email verification of ' . $request->input('email') . ' before resetting password'], 401);
+            return response()->json(['type' => 'ERROR', 'message' => 'Kindly complete email verification of ' . $request->input('email') . ' before resetting password'], 401);
         }
 
         $forgotPass = ForgotPass::firstOrNew(['user_id' => $user->id]);
@@ -153,11 +161,11 @@ class AuthController extends Controller
     public function forgotpass_verify(Request $request)
     {
         $this->validate($request, [
-            'token' => 'string',
+            'token' => 'required|string',
         ]);
 
         $forgotPass = ForgotPass::where('token', $request->input('token'))->first();
-
+        error_log(json_encode($forgotPass) . "  | " . $request->input('token'));
         if (!$forgotPass) {
             return response()->json(['message' => 'Invalid password reset token'], 400);
         }
@@ -168,7 +176,7 @@ class AuthController extends Controller
     public function forgotpass_reset(Request $request)
     {
         $this->validate($request, [
-            'token' => 'string',
+            'token' => 'required|string',
             'password' => 'required|confirmed|min:6',
         ]);
 

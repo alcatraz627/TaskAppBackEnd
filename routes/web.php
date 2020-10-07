@@ -16,7 +16,11 @@ $router->get('/', function () {
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
-    $router->get('pushNotif', 'TaskController@pushNotif');
+    // $router->get('pushNotif', 'TaskController@pushNotif');
+
+    $router->get('', function () {
+        return response()->json(['message' => 'Available'], 200);
+    });
 
     $router->get('tasks', 'TaskController@index');
     $router->get('tasks/{id}', 'TaskController@retrieve');
@@ -32,9 +36,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->get('auth/me', ['middleware' => 'auth', 'uses' => 'AuthController@me']);
 
-    $router->post('auth/forgotpass/request', ['middleware' => 'guest' ,'uses' => 'AuthController@forgotpass_request']);
-    $router->post('auth/forgotpass/verify', ['middleware' => 'guest' ,'uses' => 'AuthController@forgotpass_verify']);
-    $router->post('auth/forgotpass/reset', ['middleware' => 'guest' ,'uses' => 'AuthController@forgotpass_reset']);
+    $router->post('auth/forgotpass/request', ['middleware' => 'guest', 'uses' => 'AuthController@forgotpass_request']);
+    $router->post('auth/forgotpass/verify', ['middleware' => 'guest', 'uses' => 'AuthController@forgotpass_verify']);
+    $router->post('auth/forgotpass/reset', ['middleware' => 'guest', 'uses' => 'AuthController@forgotpass_reset']);
 
     $router->get('users', ['middleware' => ['auth', 'permission:user-list'], 'uses' => 'UserController@index']);
     $router->get('users/{id}', 'UserController@retrieve');

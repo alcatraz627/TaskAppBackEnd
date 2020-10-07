@@ -17,8 +17,9 @@ class Controller extends BaseController
     //
     private $pusher;
 
-    private function getPusher () {
-        if(!$this->pusher) {
+    private function getPusher()
+    {
+        if (!$this->pusher) {
             $this->pusher = new Pusher(
                 env('PUSHER_APP_KEY'),
                 env('PUSHER_APP_SECRET'),
@@ -27,7 +28,7 @@ class Controller extends BaseController
                     'cluster' => config('broadcasting.options.cluster'),
                     'useTLS' => config('broadcasting.options.cluster')
                 )
-            );            
+            );
         }
         return $this->pusher;
     }
@@ -41,9 +42,12 @@ class Controller extends BaseController
     //     ], 200);
     // }
 
-    protected function pushEvent($data)
+    protected function pushEvent($data, $idArr)
     {
-        $channels = ['channelForUser1'];
+        $channels = array_map(function ($id) {
+            return 'channelForUser' . $id;
+        }, $idArr);
+
         $event = 'listenerEvent';
 
         $this->getPusher()->trigger($channels, $event, $data);

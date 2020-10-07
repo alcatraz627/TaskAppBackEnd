@@ -18,7 +18,7 @@ class TaskController extends Controller
 {
     public function __construct()
     {
-        // $this->middleware('auth');
+        $this->middleware('auth');
     }
 
     public function index()
@@ -75,6 +75,10 @@ class TaskController extends Controller
 
         $task = Task::create($data);
 
+        if ($task->assigned_to) {
+            $this->pushEvent(['link' => "/task/" . $task->id, 'message' => 'You have been assigned the task ' . $task->id . ' by ' . User::find($task->created_by)->name], [$task->assigned_to]);
+        }
+
         return response()->json(['message' => 'Task created successfully!', 'task' => $task], 201);
     }
 
@@ -112,10 +116,12 @@ class TaskController extends Controller
             if (array_key_exists('due_date', $data)) {
                 $data['due_date'] = date("Y-m-d H:i:s", strtotime($data['due_date']));
             }
+            $this->pushEvent(['link' => "/task/" . $task->id, 'message' => 'The task ' . $task->id . ' was modified by the creator.'], [$task->assigned_to]);
         }
 
         if ($task->assigned_to == Auth::user()->id && $request->has('status')) {
             $data['status'] = $TASK_STATUS[$request->input('status')];
+            $this->pushEvent(['link' => "/task/" . $task->id, 'message' => 'The status of task ' . $task->id . ' was updated to ' . $data['status']], [$task->created_by]);
         }
 
         $task->update($data);
@@ -131,16 +137,18 @@ class TaskController extends Controller
         }
 
         if (Auth::user()->id == $task->created_by) {
+            $taskId = $task->id;
             $task->delete();
+            $this->pushEvent(['link' => "/task/" . $taskId, 'message' => 'Task ' . $taskId . ' deleted successfully!'], [Auth::user()->id]);
             return response()->json(['message' => 'Task deleted successfully!'], 200);
         } else {
             return response()->json(['message' => 'You are not authorized to delete this task'], 401);;
         }
     }
 
-    public function pushNotif()
-    {
-        $r = $this->pushEvent(["message" => "From the backend", 'id' => 'testnotif', 'type' => 'INFO']);
-        return response($r);
-    }
+    // public function pushNotif()
+    // {
+    //     $r = $this->pushEvent(["message" => "From the backend", 'type' => 'INFO'], Auth::user()->id);
+    //     return response($r);
+    // }
 }
