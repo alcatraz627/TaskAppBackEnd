@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\MailJob;
+use App\Mail\WelcomeMail;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 use App\Models\User;
 use App\Models\VerifyUser;
@@ -59,7 +61,8 @@ class AuthController extends Controller
         try {
             [$user, $verifToken] = $this->createUser($request->only('name', 'email', 'password', 'password_confirmation'), null);
 
-            return response()->json(['token' => $verifToken->token,  'user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
+
+            return response()->json(['token' => $verifToken->token,  'user' => $user, 'message' => 'User created successfully. Verification token ' . ($verifToken->token) . ' sent to email'], 201);
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => "User registration failed"], 500);
@@ -98,10 +101,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Please verify your email address'], 401);
         }
 
-        Mail::raw("Test Mail from self", function($message) {
-            $message->to('aakarsh.chopra@vmock.com')
-                ->subject("Is this working?");
-        });
+        $this->dispatch(new MailJob(new WelcomeMail(Auth::user()), Auth::user()));
 
         return response()->json([
             'token' => $token,
