@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\MailJob;
+use App\Mail\TaskAssignedMail;
+use App\Mail\TaskStatusMail;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Task;
 // use App\Models\User;
 use App\Models\Roles;
@@ -10,8 +14,8 @@ use App\Models\Roles;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\App;
+// use Illuminate\Support\Carbon;
+// use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
@@ -21,16 +25,30 @@ class TaskController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function list(Request $request)
     {
+        $tasks = DB::table('tasks');
         // When reading user->role, it returns the name of the role in the roles db instead of the ID
         if (Auth::user()->role == config('enums.roles')['ADMIN']) {
-            $tasks = Task::all();
+            $tasks = $tasks;
         } else {
-            $tasks = Task::where('created_by', '=', Auth::user()->id)
-                ->orWhere('assigned_to', '=', Auth::user()->id)->get();
+            $tasks = $tasks->where('created_by', '=', Auth::user()->id)->orWhere('assigned_to', '=', Auth::user()->id)->get();
         }
-        return response()->json($tasks);
+
+        $search = $request->input('search');
+        $taskStatus = $request->input('taskStatus');
+
+        if (!!$search) {
+            $tasks = $tasks
+                ->where('title', 'LIKE', "%{$search}%")
+                ->orWhere('description', 'LIKE', "%{$search}%");
+        }
+
+        if (!!$taskStatus) {
+            $tasks = $tasks->where('status', '=', $taskStatus);
+        }
+
+        return response()->json($this->paginate($tasks->get(), $request));
     }
 
     public function retrieve($id)
@@ -77,7 +95,12 @@ class TaskController extends Controller
 
         if ($task->assigned_to) {
             $this->pushEvent(['link' => "/task/" . $task->id, 'message' => 'You have been assigned the task ' . $task->id . ' by ' . User::find($task->created_by)->name], [$task->assigned_to]);
+
+            $assignee = User::find($task->assigned_to);
+            $assigner = User::find($task->created_by);
+            $this->dispatch(new MailJob(new TaskAssignedMail($assignee, $assigner, $task), $assignee));
         }
+
 
         return response()->json(['message' => 'Task created successfully!', 'task' => $task], 201);
     }
@@ -116,7 +139,9 @@ class TaskController extends Controller
             if (array_key_exists('due_date', $data)) {
                 $data['due_date'] = date("Y-m-d H:i:s", strtotime($data['due_date']));
             }
-            $this->pushEvent(['link' => "/task/" . $task->id, 'message' => 'The task ' . $task->id . ' was modified by the creator.'], [$task->assigned_to]);
+            if ($task->created_by != $task->assigned_to) {
+                $this->pushEvent(['link' => "/task/" . $task->id, 'message' => 'Task ' . $task->id . ' was modified by the creator.'], [$task->assigned_to]);
+            }
         }
 
         if ($task->assigned_to == Auth::user()->id && $request->has('status')) {

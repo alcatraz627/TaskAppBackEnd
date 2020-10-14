@@ -29,25 +29,34 @@ class AuthController extends Controller
 
     public function createUser($data, $createdById = null)
     {
-        // $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
-        $userRole = Roles::where('name', config('enums.roles')['USER'])->first();
+        try {
+            //code...
+            // $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
+            $userRole = Roles::where('name', config('enums.roles')['USER'])->first();
 
-        $user = new User;
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        $user->password = app('hash')->make($data['password']);
+            $user = new User;
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+            $user->password = app('hash')->make($data['password']);
 
-        $user->role = $userRole->id;
-        $user->save();
+            $user->role = $userRole->id;
+            // $user->update(['created_by' => $createdById ? $createdById : $user->id]);
+            $user->created_by = $createdById ? $createdById : $user->id;
+            $user->save();
 
-        $user->update(['created_by' => $createdById ? $createdById : $user->id]);
+            $verifToken = VerifyUser::create([
+                'user_id' => $user->id,
+                'token' =>  $this->generateToken(20),
+            ]);
 
-        $verifToken = VerifyUser::create([
-            'user_id' => $user->id,
-            'token' =>  $this->generateToken(20),
-        ]);
-
-        return ([$user, $verifToken]);
+            $this->dispatch(new MailJob(new WelcomeMail($user, $verifToken->token), $user));
+            return ([$user, $verifToken]);
+        } catch (\Throwable $th) {
+            $user->delete();
+            $verifToken->delete();
+            throw $th;
+            return [];
+        }
     }
 
     public function register(Request $request)
@@ -101,7 +110,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Please verify your email address'], 401);
         }
 
-        $this->dispatch(new MailJob(new WelcomeMail(Auth::user()), Auth::user()));
+        // $this->dispatch(new MailJob(new WelcomeMail(Auth::user()), Auth::user()));
 
         return response()->json([
             'token' => $token,

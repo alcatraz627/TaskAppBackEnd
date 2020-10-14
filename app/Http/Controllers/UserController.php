@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Models\User;
 use App\Models\Task;
 
@@ -20,10 +22,30 @@ class UserController extends Controller
         $this->AuthController = $AuthController;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::all();
-        return response()->json($users);
+        // $users = User::all();
+        $users = DB::table('users');
+
+        $search = $request->input('search');
+        $isVerified = $request->input('isVerified');
+
+        if ($isVerified) {
+            if ($isVerified == "true") {
+                $users = $users->where('verified', '=', 1);
+            } else if ($isVerified == "false") {
+                $users = $users->where('verified', '=', 0);
+            }
+        }
+
+        error_log($search);
+        if (!!$search) {
+            $users = $users
+                ->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('email', 'LIKE', "%{$search}%");
+        }
+
+        return response()->json($this->paginate($users->get(), $request));
     }
 
     public function retrieve($id)
@@ -34,7 +56,7 @@ class UserController extends Controller
         if ($user == null) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        return response()->json($user->only('name', 'email', 'id', 'role'));
+        return response()->json($user);
     }
 
     public function create(Request $request)
@@ -42,13 +64,13 @@ class UserController extends Controller
         $this->validate($request, [
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
-            'password' => 'required'
+            'password' => 'required|confirmed|min:6'
         ]);
 
         try {
             [$user, $verifToken] = $this->AuthController->createUser($request->only('name', 'email', 'password'), Auth::user()->id);
 
-            return response()->json(['user' => $user->only('name', 'email', 'id', 'role'), 'message' => 'Normal user created successfully. Verification token ' . ($verifToken->token) . ' sent to user\'s email'], 201);
+            return response()->json(['user' => $user, 'message' => 'User ' . $user['name'] . ' created successfully!.', 'type' => 'SUCCESS'], 201);
         } catch (\Throwable $th) {
             error_log($th);
             return response()->json(['message' => "User registration failed"], 500);
@@ -63,22 +85,24 @@ class UserController extends Controller
             'password' => 'string',
         ]);
 
-        if ($id == Auth::user()->id) {
-            $fields = ['name', 'email', 'password'];
-            $user = Auth::user();
+        try {
+            if ($id == Auth::user()->id) {
+                $fields = ['name', 'email', 'password'];
+                $user = Auth::user();
 
-            foreach ($fields as $field) {
-                if (!is_null($request->input($field))) $user[$field] = $request->input($field);
-                if (!is_null($request->input('password'))) $user->password = app('hash')->make($request->input('password'));
+                foreach ($fields as $field) {
+                    if (!is_null($request->input($field))) $user[$field] = $request->input($field);
+                    if (!is_null($request->input('password'))) $user->password = app('hash')->make($request->input('password'));
+                }
+
+                $user->save();
+
+                return response()->json(['user' => $user, 'message' => 'User updated successfully!', 'type' => 'SUCCESS']);
             }
-
-            $user->save();
-
-            return response()->json($user->only('name', 'email', 'id', 'role'));
+        } catch (\Throwable $th) {
+            error_log($th);
+            return response()->json(['message' => "User registration failed"], 500);
         }
-
-        // TODO: Admin can change role. Do after ENUM for perms. Update: Do it in a different method
-        return response();
     }
 
     public function delete($id)
@@ -96,27 +120,45 @@ class UserController extends Controller
         return response()->json(['message' => 'User with ID ' . $id . ' deleted'], 200);
     }
 
-    public function tasklist($id)
+    public function tasklist(Request $request, $id)
     {
         $user = User::find($id);
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
-        $tasks = Task::where('assigned_to', $id)->orWhere('created_by', $id)->get()->toArray();
+        $tasks = DB::table('tasks')->where('created_by', '=', Auth::user()->id)
+            ->orWhere('assigned_to', '=', Auth::user()->id);
 
-        $getId = function ($task) {
-            return $task['id'];
-        };
+        // $tasks = Task::where('assigned_to', $id)->orWhere('created_by', $id)->get()->toArray();
 
-        $filterByParam = function ($param) use ($id) {
-            return function ($task) use ($id, $param) {
-                return $task[$param] == $id;
-            };
-        };
+        $search = $request->input('search');
+        $taskStatus = $request->input('taskStatus');
 
-        $assigned_to = array_values(array_map($getId, array_filter($tasks, $filterByParam('assigned_to'))));
-        $created_by = array_values(array_map($getId, array_filter($tasks, $filterByParam('created_by'))));
+        if (!!$search) {
+            $tasks = $tasks
+                ->where('title', 'LIKE', "%{$search}%")
+                ->orWhere('description', 'like', '%' . $search . '%');
+        }
 
-        return response()->json(['tasks' => $tasks, 'created_by' => $created_by, 'assigned_to' => $assigned_to]);
+        if (!!$taskStatus) {
+            $tasks = $tasks->where('status', '=', $taskStatus);
+        }
+
+        // $tasks = $tasks->get()->toArray();
+
+        // $getId = function ($task) {
+        //     return $task['id'];
+        // };
+
+        // $filterByParam = function ($param) use ($id) {
+        //     return function ($task) use ($id, $param) {
+        //         return $task[$param] == $id;
+        //     };
+        // };
+
+        // $assigned_to = array_values(array_map($getId, array_filter($tasks, $filterByParam('assigned_to'))));
+        // $created_by = array_values(array_map($getId, array_filter($tasks, $filterByParam('created_by'))));
+
+        return response()->json($this->paginate($tasks->get(), $request));
     }
 }

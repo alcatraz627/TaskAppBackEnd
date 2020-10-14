@@ -19,7 +19,7 @@ class RoleSeeder extends Seeder
                 'name' => config('enums.roles')['ADMIN'],
                 'description' => 'Admin role',
                 'permissions' => ([
-                    'user-list', 'user-add', 'user-delete', 'task-list', 'role-change'
+                    'user-list', 'user-create', 'user-delete', 'task-list', 'role-change'
                 ])
             ],
             [

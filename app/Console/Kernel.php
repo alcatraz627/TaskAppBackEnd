@@ -15,7 +15,10 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         // Package to be able to use `php artisan vendor:publish` in lumen
         // https://github.com/laravelista/lumen-vendor-publish^5.8
-        \Laravelista\LumenVendorPublish\VendorPublishCommand::class
+        \Laravelista\LumenVendorPublish\VendorPublishCommand::class,
+        // Tinker for Lumen
+        // https://stackoverflow.com/questions/42635016/command-tinker-is-not-defined
+        \Laravel\Tinker\Console\TinkerCommand::class,
     ];
 
     /**

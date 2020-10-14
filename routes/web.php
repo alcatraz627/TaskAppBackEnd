@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Application Routes
@@ -12,7 +14,10 @@
 */
 
 $router->get('/', function () {
-    return "Hello Bois";
+    if(env("APP_DEBUG")) {
+        return response()->json(Route::getRoutes());
+    }
+    return redirect(env('FRONTEND_URL'));
 });
 
 $router->group(['prefix' => 'api'], function () use ($router) {
@@ -22,7 +27,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         return response()->json(['message' => 'Available'], 200);
     });
 
-    $router->get('tasks', 'TaskController@index');
+    $router->get('tasks', 'TaskController@list');
     $router->get('tasks/{id}', 'TaskController@retrieve');
     $router->post('tasks', 'TaskController@create');
     $router->patch('tasks/{id}', ['middleware' => ['emptyToNull'], 'uses' => 'TaskController@update']);

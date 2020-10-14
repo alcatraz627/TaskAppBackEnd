@@ -24,7 +24,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'role',
+        'name', 'email', 'role', 'verified'
     ];
 
     /**
@@ -33,7 +33,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $hidden = [
-        'password',  'created_by', 'deleted_by', 'verified', 'created_at', 'updated_at', 'deleted_at',
+        'password',  'created_by', 'deleted_by', 'created_at', 'updated_at', 'deleted_at',
     ];
 
     // protected $appends = ['hasPermission'];

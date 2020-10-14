@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Roles;
-
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
@@ -33,14 +33,14 @@ class Controller extends BaseController
         return $this->pusher;
     }
 
-    // protected function respondWithToken($token)
-    // {
-    //     return response()->json([
-    //         'token' => $token,
-    //         'token_type' => 'Token',
-    //         'expires_in' => Auth::factory()->getTTL() * 60
-    //     ], 200);
-    // }
+    protected function paginate($list, Request $request)
+    {
+        $limit = $request->input('limit', 5);
+        $offset = $request->input('offset', 0);
+
+        return ['count' => count($list), 'data' => array_slice($list->toArray(), $offset, $limit)];
+        // return $list;
+    }
 
     protected function pushEvent($data, $idArr)
     {
@@ -52,8 +52,4 @@ class Controller extends BaseController
 
         $this->getPusher()->trigger($channels, $event, $data);
     }
-
-    // protected function hasPermission(User $user, String $permission) {
-    //     return in_array($permission, Roles::find($user->role)->permissions);
-    // }
 }
