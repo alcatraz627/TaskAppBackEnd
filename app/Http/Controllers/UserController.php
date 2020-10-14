@@ -25,15 +25,15 @@ class UserController extends Controller
     public function index(Request $request)
     {
         // $users = User::all();
-        $users = DB::table('users');
+        $users = DB::table('users')->select(array_merge((new User())->getFillable(), ['id']));
 
         $search = $request->input('search');
         $isVerified = $request->input('isVerified');
 
         if ($isVerified) {
-            if ($isVerified == "true") {
+            if ($isVerified == "VERIFIED") {
                 $users = $users->where('verified', '=', 1);
-            } else if ($isVerified == "false") {
+            } else if ($isVerified == "NOT_VERIFIED") {
                 $users = $users->where('verified', '=', 0);
             }
         }

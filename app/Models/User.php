@@ -36,8 +36,6 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         'password',  'created_by', 'deleted_by', 'created_at', 'updated_at', 'deleted_at',
     ];
 
-    // protected $appends = ['hasPermission'];
-
     public function getJWTIdentifier()
     {
         return $this->getKey();

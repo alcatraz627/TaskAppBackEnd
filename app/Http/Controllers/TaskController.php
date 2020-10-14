@@ -27,7 +27,9 @@ class TaskController extends Controller
 
     public function list(Request $request)
     {
-        $tasks = DB::table('tasks');
+        // $tasks = DB::table('tasks');
+        $tasks = DB::table('tasks')->select(array_merge((new Task())->getFillable(), ['id']));
+
         // When reading user->role, it returns the name of the role in the roles db instead of the ID
         if (Auth::user()->role == config('enums.roles')['ADMIN']) {
             $tasks = $tasks;
