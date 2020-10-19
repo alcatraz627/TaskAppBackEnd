@@ -17,6 +17,8 @@ class Task extends Model {
         'due_date' => 'datetime:Y-m-d\TH:i'
     ];
 
+    // protected $with = ['user'];
+
     // public function setDueDateAttribute($value) {
     //     return date ("Y-d-m H:i:s", strtotime($value));
     // }

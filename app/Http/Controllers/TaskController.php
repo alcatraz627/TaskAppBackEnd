@@ -25,6 +25,22 @@ class TaskController extends Controller
         $this->middleware('auth');
     }
 
+    public function serializeUsers($tasks)
+    {
+        error_log("Task: " . gettype($tasks));
+        return array_map(function ($task) {
+            // error_log($task->id);
+            return [
+                'task' => $task,
+                'users' => [
+                    'assigned_to' => User::find($task->assigned_to),
+                    'created_by' => User::find($task->created_by)
+                ]
+            ];
+        }, $tasks->toArray());
+        // return $tasks;
+    }
+
     public function list(Request $request)
     {
         // $tasks = DB::table('tasks');
@@ -34,7 +50,7 @@ class TaskController extends Controller
         if (Auth::user()->role == config('enums.roles')['ADMIN']) {
             $tasks = $tasks;
         } else {
-            $tasks = $tasks->where('created_by', '=', Auth::user()->id)->orWhere('assigned_to', '=', Auth::user()->id)->get();
+            $tasks = $tasks->where('created_by', '=', Auth::user()->id)->orWhere('assigned_to', '=', Auth::user()->id);
         }
 
         $search = $request->input('search');
@@ -50,7 +66,7 @@ class TaskController extends Controller
             $tasks = $tasks->where('status', '=', $taskStatus);
         }
 
-        return response()->json($this->paginate($tasks->get(), $request));
+        return response()->json($this->paginate($this->serializeUsers($tasks->get()), $request));
     }
 
     public function retrieve($id)

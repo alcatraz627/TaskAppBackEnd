@@ -15,11 +15,13 @@ use Illuminate\Support\Facades\Auth;
 class UserController extends Controller
 {
     protected $AuthController;
+    protected $TaskController;
 
-    public function __construct(AuthController $AuthController)
+    public function __construct(AuthController $AuthController, TaskController $TaskController)
     {
         $this->middleware('auth');
         $this->AuthController = $AuthController;
+        $this->TaskController = $TaskController;
     }
 
     public function index(Request $request)
@@ -45,7 +47,7 @@ class UserController extends Controller
                 ->orWhere('email', 'LIKE', "%{$search}%");
         }
 
-        return response()->json($this->paginate($users->get(), $request));
+        return response()->json($this->paginate($users->get()->toArray(), $request));
     }
 
     public function retrieve($id)
@@ -159,6 +161,6 @@ class UserController extends Controller
         // $assigned_to = array_values(array_map($getId, array_filter($tasks, $filterByParam('assigned_to'))));
         // $created_by = array_values(array_map($getId, array_filter($tasks, $filterByParam('created_by'))));
 
-        return response()->json($this->paginate($tasks->get(), $request));
+        return response()->json($this->paginate($this->TaskController->serializeUsers($tasks->get()), $request));
     }
 }

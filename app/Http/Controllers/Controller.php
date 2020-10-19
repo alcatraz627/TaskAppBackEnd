@@ -38,7 +38,12 @@ class Controller extends BaseController
         $limit = $request->input('limit', 5);
         $offset = $request->input('offset', 0);
 
-        return ['count' => count($list), 'data' => array_slice($list->toArray(), $offset, $limit)];
+        $data = array_slice($list, $offset, $limit);
+        // if($serializer) {
+        //     $data = $serializer($data);
+        // }
+
+        return ['count' => count($list), 'data' => $data];
         // return $list;
     }
 

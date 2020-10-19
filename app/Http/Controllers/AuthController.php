@@ -103,7 +103,12 @@ class AuthController extends Controller
         $credentials = $request->only(['email', 'password']);
 
         if (!$token = Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            if(User::where('email', $credentials['email'])->count() > 0 ) {
+                $message = "Invalid password.";                
+            } else {
+                $message = "Email does not exist.";
+            }
+            return response()->json(['message' => $message], 401);
         }
 
         if (!Auth::user()->verified) {

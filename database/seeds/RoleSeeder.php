@@ -25,7 +25,7 @@ class RoleSeeder extends Seeder
             [
                 'name' => config('enums.roles')['USER'],
                 'description' => 'Normal user role',
-                'permissions' => ([])
+                'permissions' => (['user-list'])
             ]
         ];
         Roles::create($roles[0]);
