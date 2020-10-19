@@ -25,9 +25,19 @@ class TaskController extends Controller
         $this->middleware('auth');
     }
 
+    public function serializeUser($task)
+    {
+        return [
+            'task' => $task,
+            'users' => [
+                'assigned_to' => User::find($task->assigned_to),
+                'created_by' => User::find($task->created_by)
+            ]
+        ];
+    }
+
     public function serializeUsers($tasks)
     {
-        error_log("Task: " . gettype($tasks));
         return array_map(function ($task) {
             // error_log($task->id);
             return [
@@ -46,42 +56,43 @@ class TaskController extends Controller
         // $tasks = DB::table('tasks');
         $tasks = DB::table('tasks')->select(array_merge((new Task())->getFillable(), ['id']));
 
-        // When reading user->role, it returns the name of the role in the roles db instead of the ID
-        if (Auth::user()->role == config('enums.roles')['ADMIN']) {
-            $tasks = $tasks;
+        if ($request->user()->hasPermission('task-list')) {
+            // Do nothing because already fetched
         } else {
-            $tasks = $tasks->where('created_by', '=', Auth::user()->id)->orWhere('assigned_to', '=', Auth::user()->id);
+            $tasks->where('created_by', $request->user())->orWhere('assigned_to', $request->user()->id);
         }
 
         $search = $request->input('search');
         $taskStatus = $request->input('taskStatus');
 
+        error_log(json_encode('BeforeSearch: ' . json_encode($tasks->count())));
         if (!!$search) {
-            $tasks = $tasks
+            $tasks
                 ->where('title', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%");
         }
+        error_log(json_encode('AfterSearch: ' . json_encode($tasks->count())));
 
         if (!!$taskStatus) {
-            $tasks = $tasks->where('status', '=', $taskStatus);
+            $tasks->where('status', '=', $taskStatus);
         }
+        error_log(json_encode('AfterFilter: ' . json_encode($tasks->count())));
 
         return response()->json($this->paginate($this->serializeUsers($tasks->get()), $request));
     }
 
-    public function retrieve($id)
+    public function retrieve(Request $request, $id)
     {
         $task = Task::find($id);
         if ($task == null) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
-        if (Auth::user()->role == $admin->role || in_array(Auth::user()->id, [$task->created_by, $task->assigned_to])) {
-
-            return response()->json($task);
+        // $admin = Roles::where('name', config('enums.roles')['ADMIN'])->first();
+        if ($request->user()->hasPermission('task-list') || in_array(Auth::user()->id, [$task->created_by, $task->assigned_to])) {
+            return response()->json($this->serializeUser($task));
         } else {
-            return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can view', 401]);
+            return response()->json(['message' => 'Unauthorized. Only Creators or Assignees can view', 'type' => 'ERROR'], 401);
         }
     }
 
@@ -120,7 +131,7 @@ class TaskController extends Controller
         }
 
 
-        return response()->json(['message' => 'Task created successfully!', 'task' => $task], 201);
+        return response()->json(['message' => 'Task created successfully!', 'task' => $this->serializeUser($task)], 201);
     }
 
     public function update(Request $request, $id)
@@ -168,7 +179,7 @@ class TaskController extends Controller
         }
 
         $task->update($data);
-        return response()->json(['task' => $task, 'message' => 'Task updated successfully'], 201);
+        return response()->json(['task' => $this->serializeUser($task), 'message' => 'Task updated successfully'], 201);
     }
 
     public function delete($id)
